@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Duct Slide Rule</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  :root { color-scheme: light; background: var(--bg); padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; }
+  [hidden] { display: none !important; }
+</style>
+<style>
+  /* Layout: phone-first. The slide rule is a physical card object (fixed colors in both themes), controls and readouts sit below it. */
+  :root {
+    --bg: #E8EDEA;
+    --panel: #F6F8F6;
+    --ink: #17211C;
+    --muted: #5D6F66;
+    --line: #CBD5CF;
+    --accent: #1F7A5A;
+    --accent-ink: #FFFFFF;
+    --cursor: #D63A1F;
+    --rule-card: #FBFBF8;
+    --rule-win: #FFFFFF;
+    --rule-mint: #B6E0CB;
+    --rule-gray: #BDBFC1;
+    --rule-black: #15191B;
+    --rule-ink: #15191B;
+    --font-rule: 'Barlow Semi Condensed', 'Arial Narrow', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans Thai', 'Noto Sans Thai', system-ui, sans-serif;
+    --font-data: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101814; --panel: #17231D; --ink: #E4EEE8; --muted: #8FA699; --line: #2B3D33;
+      --accent: #5CC79A; --accent-ink: #0E1712; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101814; --panel: #17231D; --ink: #E4EEE8; --muted: #8FA699; --line: #2B3D33;
+    --accent: #5CC79A; --accent-ink: #0E1712; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+    padding-block: 18px 48px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .wrap { max-width: 640px; margin: 0 auto; display: grid; gap: 16px; }
+  h1 { font-family: var(--font-rule); font-weight: 700; font-size: 26px; letter-spacing: .06em; text-transform: uppercase; margin: 0; line-height: 1.1; }
+  .sub { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+
+  #rule {
+    display: block; width: 100%; height: auto; border-radius: 18px;
+    box-shadow: 0 1px 0 rgba(0,0,0,.10), 0 10px 26px -14px rgba(0,0,0,.45);
+    touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  #rule:active { cursor: grabbing; }
+  .tip { margin: 8px 2px 0; font-size: 13px; color: var(--muted); }
+  .oor { margin: 6px 2px 0; font-size: 13px; color: var(--cursor); }
+
+  .r-card { fill: var(--rule-card); }
+  .r-win { fill: var(--rule-win); }
+  .r-mint { fill: var(--rule-mint); }
+  .r-gray { fill: var(--rule-gray); }
+  .r-black { fill: var(--rule-black); }
+  .r-eye { fill: var(--rule-gray); stroke: var(--rule-ink); stroke-width: 1.2; }
+  .tk { stroke: var(--rule-ink); stroke-width: 1.15; fill: none; }
+  .sep { stroke: var(--rule-gray); stroke-width: 1; }
+  .lb { font-family: var(--font-rule); font-weight: 600; fill: var(--rule-ink); }
+  .lw { font-family: var(--font-rule); font-weight: 600; fill: var(--rule-card); }
+  .ttl { font-family: var(--font-rule); font-weight: 700; fill: var(--rule-ink); letter-spacing: 5px; font-size: 28px; }
+  .note { font-family: var(--font-rule); font-weight: 600; fill: var(--rule-ink); font-size: 9.5px; }
+  .cur { stroke: var(--cursor); stroke-width: 1.6; fill: none; }
+  .pill { fill: var(--cursor); }
+  .pt { font-family: var(--font-data); font-weight: 500; font-size: 10.5px; fill: var(--rule-card); }
+  .arrow { fill: var(--rule-black); }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+  .panel h2 { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+  .fld { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 12px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); }
+  .fld:first-of-type { border-top: 0; }
+  .fld label { font-size: 14px; font-weight: 500; }
+  .fld .alt { grid-column: 2; text-align: right; font-family: var(--font-data); font-size: 12px; color: var(--muted); min-height: 1.4em; }
+  .fld .lab-sub { grid-column: 1; grid-row: 2; font-size: 12px; color: var(--muted); }
+  .inp { display: inline-flex; align-items: baseline; gap: 6px; justify-content: flex-end; }
+  .inp input[type="text"] {
+    width: 96px; font-family: var(--font-data); font-size: 16px; font-weight: 500; text-align: right;
+    padding: 4px 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .inp .u { font-family: var(--font-data); font-size: 12px; color: var(--muted); min-width: 7.5ch; }
+  .ro { font-family: var(--font-data); font-size: 15px; font-variant-numeric: tabular-nums; text-align: right; }
+
+  input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 32px; background: transparent; margin: 0; }
+  input[type="range"]::-webkit-slider-runnable-track { height: 4px; background: var(--line); border-radius: 2px; }
+  input[type="range"]::-moz-range-track { height: 4px; background: var(--line); border-radius: 2px; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; margin-top: -10px; border-radius: 50%; background: var(--accent); border: 3px solid var(--panel); box-shadow: 0 0 0 1px var(--accent); }
+  input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--accent); border: 3px solid var(--panel); box-shadow: 0 0 0 1px var(--accent); }
+  button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; margin-top: 4px; }
+  .seg button { flex: 1; font: inherit; font-size: 13px; padding: 8px 6px; border: 0; background: transparent; color: var(--ink); cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .qhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .qhead .alt { font-family: var(--font-data); font-size: 12px; color: var(--muted); text-align: right; }
+  .lock-l { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+  .chip { font: inherit; font-size: 13px; padding: 5px 12px; border: 1px solid var(--line); border-radius: 99px; background: var(--bg); color: var(--ink); cursor: pointer; font-family: var(--font-data); }
+  .chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .big { font-family: var(--font-rule); font-weight: 700; font-size: 32px; line-height: 1.1; font-variant-numeric: tabular-nums; margin: 4px 0 2px; overflow-wrap: anywhere; }
+  .big small { font-size: 15px; font-weight: 500; color: var(--muted); margin-left: 4px; }
+  .mm { font-family: var(--font-data); font-size: 12.5px; color: var(--muted); }
+  .rows { margin: 8px 0 0; }
+  .row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .row dt { color: var(--muted); }
+  .row dd { margin: 0; font-family: var(--font-data); font-size: 13.5px; text-align: right; font-variant-numeric: tabular-nums; }
+  details.how summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+  details.how ol { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; color: var(--muted); font-size: 13.5px; }
+  details.how p { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+  .res2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .res2 .k { font-size: 13px; color: var(--muted); }
+  .res2 .big { font-size: 38px; }
+  details.setfrom { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 8px; }
+  details.setfrom summary { cursor: pointer; font-size: 13.5px; color: var(--muted); }
+  .badge { fill: var(--cursor); }
+  .bt { font-family: var(--font-rule); font-weight: 700; font-size: 11px; fill: var(--rule-card); }
+  .hl { fill: none; stroke: var(--cursor); stroke-width: 1.6; stroke-dasharray: 5 3; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Duct Slide Rule</h1>
+    <p class="sub">ไม้บรรทัดสไลด์คำนวณท่อลมแบบเดียวกับของจริง หน่วย IP พร้อมตัวเลขแม่นยำด้านล่าง</p>
+  </header>
+
+  <section aria-label="ไม้บรรทัดสไลด์">
+    <svg id="rule" viewBox="0 0 600 480" role="application" aria-label="ไม้บรรทัดสไลด์ท่อลม ลากซ้ายขวาเพื่อเลื่อนแถบสไลด์"></svg>
+    <p class="tip"><b>วิธีอ่านแบบเดียวกับไม้บรรทัดจริง:</b> ① ตั้ง CFM ให้ตรงกับเส้น Friction loss (ช่องกลาง) ② อ่านความเร็วลมที่ช่องบน ③ อ่านขนาดท่อใต้ลูกศร · ลากแถบสไลด์ด้วยนิ้วได้ หรือพิมพ์ Q กับ Friction ด้านล่าง</p>
+    <p class="oor" id="oor" hidden>ค่าบางส่วนอยู่นอกช่วงสเกลของไม้บรรทัด ใช้ตัวเลขด้านล่างแทน</p>
+  </section>
+
+  <section class="panel" aria-label="ตั้งค่า">
+    <h2>ตั้งค่า: เทียบ CFM กับ Friction loss</h2>
+    <div class="fld" style="border-top:0">
+      <label for="in-Q">ปริมาณลม Q</label>
+      <div class="inp"><input id="in-Q" type="text" inputmode="decimal"><span class="u">CFM</span></div>
+      <div class="alt" id="alt-Q"></div>
+    </div>
+    <input id="rg-Q" type="range" min="0" max="1000" step="1" aria-label="ปริมาณลม Q แบบสเกลลอการิทึม">
+    <div class="fld">
+      <label for="in-f">Friction loss</label>
+      <div class="inp"><input id="in-f" type="text" inputmode="decimal"><span class="u">in.wg/100ft</span></div>
+      <div class="alt" id="alt-f"></div>
+    </div>
+    <input id="rg-f" type="range" min="0" max="1000" step="1" aria-label="Friction loss แบบสเกลลอการิทึม">
+    <div class="lock-l">เมื่อเปลี่ยน Q ให้คงค่า (ตามค่าที่ตั้งล่าสุด)</div>
+    <div class="seg" role="group" aria-label="ค่าที่ต้องคงไว้">
+      <button type="button" data-lock="f">Friction</button>
+      <button type="button" data-lock="V">ความเร็ว</button>
+      <button type="button" data-lock="D">Ø ท่อ</button>
+    </div>
+  </section>
+
+  <section class="panel" aria-label="ผลลัพธ์ท่อกลม">
+    <h2>ผลลัพธ์ท่อกลม</h2>
+    <div class="res2">
+      <div><div class="k">ความเร็วลม</div><div class="big" id="big-V"></div><div class="mm" id="alt-V"></div></div>
+      <div><div class="k">ขนาดท่อ Ø (ใต้ลูกศร)</div><div class="big" id="big-D"></div><div class="mm" id="alt-D"></div></div>
+    </div>
+    <dl class="rows"><div class="row"><dt>Velocity pressure</dt><dd id="ro-pv"></dd></div></dl>
+    <details class="setfrom">
+      <summary>ตั้งจากความเร็วหรือ Ø แทน</summary>
+      <div class="fld" style="border-top:0">
+        <label for="in-V">ความเร็วลม V</label>
+        <div class="inp"><input id="in-V" type="text" inputmode="decimal"><span class="u">fpm</span></div>
+      </div>
+      <div class="fld">
+        <label for="in-D">เส้นผ่านศูนย์กลาง Ø</label>
+        <div class="inp"><input id="in-D" type="text" inputmode="decimal"><span class="u">in</span></div>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel" aria-label="ท่อสี่เหลี่ยม">
+    <h2>ท่อสี่เหลี่ยม (equal friction)</h2>
+    <label for="rg-ar" class="mm">Aspect ratio <span id="ar-val" style="color:var(--ink)"></span></label>
+    <input id="rg-ar" type="range" min="1" max="6" step="0.1" aria-label="Aspect ratio">
+    <div class="chips" role="group" aria-label="ค่า aspect ratio ที่ใช้บ่อย">
+      <button class="chip" type="button" data-ar="1">1 : 1</button>
+      <button class="chip" type="button" data-ar="2">2 : 1</button>
+      <button class="chip" type="button" data-ar="3">3 : 1</button>
+      <button class="chip" type="button" data-ar="4">4 : 1</button>
+    </div>
+    <div class="big" id="rect-big"></div>
+    <div class="mm" id="rect-mm"></div>
+    <dl class="rows" id="rect-rows"></dl>
+  </section>
+
+  <details class="panel how">
+    <summary>วิธีใช้และที่มาของสเกล</summary>
+    <ol>
+      <li>ตั้ง Q ด้วยสไลเดอร์หรือพิมพ์ตัวเลข เครื่องหมายสีแดงบนแถบ CFM จะเลื่อนตาม</li>
+      <li>ลากแถบสไลด์จนความเร็วหรือ friction ที่เครื่องหมายสีแดงตรงตามต้องการ แล้วอ่านเส้นผ่านศูนย์กลางใต้ลูกศร</li>
+      <li>ท่อสี่เหลี่ยม: เส้นสีแดงในช่องล่างอ่านด้านยาวและด้านสั้นที่ equal friction ตามแนวตั้งเดียวกัน ปรับด้วย aspect ratio</li>
+      <li>ล็อก friction ไว้แล้วเปลี่ยน Q ได้ทันที ขนาดท่อจะตามอัตโนมัติ นี่คือวิธี equal friction</li>
+    </ol>
+    <p>สเกลคำนวณจากสมการเดียวกับไม้บรรทัดจริง: V = 183.35·Q / D², Δp = 0.109136·Q^1.9 / D^5.02 (in.wg ต่อ 100 ft, ท่อเหล็กอาบสังกะสี, อากาศมาตรฐาน), Pv = (V/4005)² และ De = 1.30(ab)^0.625/(a+b)^0.25 ตัวเลขด้านล่างคิดจากสมการโดยตรง จึงละเอียดกว่าการอ่านสเกล ไม่รวมความดันตกจาก fitting และอุปกรณ์</p>
+  </details>
+</div>
+
+<script>
+// <pure>
+const W = 600, P = 240, PF = 2 * P / 5.02, KC = 0.109136;
+const XV0 = 128, XF0 = 150, XA = 250, WL = 96, WR = 584;
+const vOf = (Q, D) => 183.35 * Q / (D * D);
+const fOf = (Q, D) => KC * Math.pow(Q, 1.9) / Math.pow(D, 5.02);
+const DfromV = (Q, V) => Math.sqrt(183.35 * Q / V);
+const DfromF = (Q, f) => Math.pow(KC * Math.pow(Q, 1.9) / f, 1 / 5.02);
+const xV = (V) => XV0 + P * Math.log10(V / 300);
+const xF = (f) => XF0 + PF * Math.log10(f / 0.01);
+const eqDia = (a, b) => 1.3 * Math.pow(a * b, 0.625) / Math.pow(a + b, 0.25);
+function solveOther(b, De) {
+  let lo = 0.01, hi = Math.max(De * 4, b * 2);
+  while (eqDia(hi, b) < De) hi *= 2;
+  for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (eqDia(m, b) < De) lo = m; else hi = m; }
+  return (lo + hi) / 2;
+}
+function rectFromAR(D, AR) {
+  const a = D * Math.pow(AR, 0.375) * Math.pow(AR + 1, 0.25) / 1.3;
+  return { a: a, b: a / AR };
+}
+function fmtS(v) {
+  if (v >= 1000) return Math.round(v).toLocaleString('en-US');
+  const s = String(+v.toPrecision(3));
+  return v < 1 ? s.replace(/^0/, '') : s;
+}
+function genTicks(o) {
+  const out = [], cand = [0.05, 0.1, 0.2, 0.5, 1];
+  for (let e = o.e0; e <= o.e1; e++) {
+    const sc = Math.pow(10, e);
+    for (let k = 1; k < 10; k++) {
+      let s = 1;
+      for (let i = 0; i < cand.length; i++) {
+        if (o.ppd * Math.log10((k + 1) / (k + 1 - cand[i])) >= 4) { s = cand[i]; break; }
+      }
+      const n = Math.round(1 / s);
+      for (let j = 0; j < n; j++) {
+        const m = k + j * s, v = m * sc;
+        if (v < o.vmin || v > o.vmax) continue;
+        const x = o.xOf(v);
+        if (!(x >= o.xmin && x <= o.xmax)) continue;
+        out.push({ v: v, x: x, lab: o.mant.some(function (q) { return Math.abs(q - m) < 1e-6; }), int: Math.abs(m - Math.round(m)) < 1e-6 });
+      }
+    }
+  }
+  out.sort(function (a, b) { return a.x - b.x; });
+  return out;
+}
+function drawScale(ticks, o) {
+  let d = '', t = '', last = -1e9;
+  for (let i = 0; i < ticks.length; i++) {
+    const k = ticks[i];
+    const L = k.lab ? o.L1 : (k.int ? o.L2 : o.L3);
+    d += 'M' + k.x.toFixed(1) + ' ' + o.y + 'v' + (o.dir * L);
+    if (k.lab && !o.noLab) {
+      const txt = o.fmt(k.v), w = txt.length * o.fs * 0.55;
+      if (k.x - w / 2 >= last + 2 && k.x - w / 2 >= WL + 2 && k.x + w / 2 <= WR - 2) {
+        t += '<text class="lb" x="' + k.x.toFixed(1) + '" y="' + o.ly + '" text-anchor="middle" font-size="' + o.fs + '">' + txt + '</text>';
+        last = k.x + w / 2;
+      }
+    }
+  }
+  return '<path class="tk" d="' + d + '"/>' + t;
+}
+const MANT_A = [1, 1.5, 2, 3, 4, 5, 7], MANT_B = [1, 2, 3, 5, 7];
+const MANT_D = [1, 1.2, 1.4, 1.6, 1.8, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9];
+const BVALS = [3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 24, 28, 30, 36, 40, 48, 50, 60, 70, 80, 100, 120];
+
+function pill(x, y, txt) {
+  const w = txt.length * 6.4 + 12;
+  const cx = Math.min(WR - w / 2, Math.max(WL + w / 2, x));
+  return '<rect class="pill" x="' + (cx - w / 2).toFixed(1) + '" y="' + (y - 8) + '" width="' + w.toFixed(1) + '" height="16" rx="8"/>' +
+    '<text class="pt" x="' + cx.toFixed(1) + '" y="' + (y + 3.8) + '" text-anchor="middle">' + txt + '</text>';
+}
+const inWin = (x) => x >= WL - 2 && x <= WR + 2;
+
+function staticSVG() {
+  let s = '<defs>' +
+    '<clipPath id="c1"><rect x="' + WL + '" y="110" width="' + (WR - WL) + '" height="56"/></clipPath>' +
+    '<clipPath id="c2"><rect x="' + WL + '" y="250" width="' + (WR - WL) + '" height="56"/></clipPath>' +
+    '<clipPath id="c3"><rect x="' + WL + '" y="352" width="' + (WR - WL) + '" height="72"/></clipPath>' +
+    '<clipPath id="c4"><rect x="' + WL + '" y="424" width="' + (WR - WL) + '" height="42"/></clipPath></defs>';
+  s += '<rect class="r-card" x="0" y="0" width="600" height="480" rx="18"/>';
+  [[14, 14], [586, 14], [14, 466], [586, 466]].forEach(function (p) { s += '<circle class="r-eye" cx="' + p[0] + '" cy="' + p[1] + '" r="5"/>'; });
+  s += '<text class="ttl" x="26" y="56">DUCT CALCULATOR</text>';
+  s += '<text class="note" x="588" y="38" text-anchor="end">Based on Std. Air and Medium</text><text class="note" x="588" y="50" text-anchor="end">Smooth Galvanized Duct (ε = 0.0003 ft)</text>';
+  // bands
+  s += '<rect class="r-mint" x="10" y="76" width="580" height="34" rx="3"/><rect class="r-mint" x="10" y="166" width="580" height="34" rx="3"/>';
+  s += '<rect class="r-gray" x="10" y="216" width="580" height="34" rx="3"/><rect class="r-gray" x="10" y="306" width="580" height="8" rx="2"/>';
+  s += '<rect class="r-mint" x="10" y="330" width="580" height="22" rx="3"/><rect class="r-mint" x="10" y="424" width="580" height="42" rx="3"/>';
+  // windows
+  s += '<rect class="r-win" x="' + WL + '" y="110" width="' + (WR - WL) + '" height="56"/><rect class="r-win" x="' + WL + '" y="250" width="' + (WR - WL) + '" height="56"/><rect class="r-win" x="' + WL + '" y="352" width="' + (WR - WL) + '" height="72"/>';
+  s += '<line class="sep" x1="' + WL + '" y1="388" x2="' + WR + '" y2="388"/>';
+  // label blocks
+  s += '<rect class="r-black" x="10" y="110" width="84" height="56"/><rect class="r-black" x="10" y="250" width="84" height="56"/>';
+  s += '<rect class="r-black" x="10" y="352" width="84" height="36"/><rect class="r-black" x="10" y="388" width="84" height="36"/>';
+  s += '<text class="lw" x="52" y="143" text-anchor="middle" font-size="15">CFM</text><text class="lw" x="52" y="283" text-anchor="middle" font-size="15">CFM</text>';
+  s += '<text class="lw" x="52" y="368" text-anchor="middle" font-size="11">ROUND Ø</text><text class="lw" x="52" y="381" text-anchor="middle" font-size="11">DIAMETER (in)</text>';
+  s += '<text class="lw" x="52" y="404" text-anchor="middle" font-size="11">RECT. LARGER</text><text class="lw" x="52" y="417" text-anchor="middle" font-size="11">DIMENSION (in)</text>';
+  s += '<text class="lb" x="16" y="91" font-size="10.5">VELOCITY</text><text class="lb" x="16" y="104" font-size="10.5">(fpm)</text>';
+  s += '<text class="lb" x="16" y="181" font-size="10">VELOCITY PRESS.</text><text class="lb" x="16" y="193" font-size="10">inches WG</text>';
+  s += '<text class="lb" x="16" y="231" font-size="10">FRICTION LOSS</text><text class="lb" x="16" y="243" font-size="10">in. WG / 100 ft</text>';
+  s += '<text class="lb" x="16" y="443" font-size="10.5">RECT. SMALLER</text><text class="lb" x="16" y="456" font-size="10.5">DIMENSION (in)</text>';
+  // arrow
+  s += '<polygon class="arrow" points="' + (XA - 9) + ',330 ' + (XA + 9) + ',330 ' + XA + ',351"/>';
+  s += '<rect class="hl" x="8" y="214" width="584" height="102" rx="5"/>';
+  [[22, 122, 2], [22, 262, 1], [22, 341, 3]].forEach(function (b) {
+    s += '<circle class="badge" cx="' + b[0] + '" cy="' + b[1] + '" r="8"/><text class="bt" x="' + b[0] + '" y="' + (b[1] + 4) + '" text-anchor="middle">' + b[2] + '</text>';
+  });
+  // fixed scales
+  const nope = { vmin: 0, vmax: Infinity, xmin: -1e9, xmax: 1e9 };
+  const tV = genTicks(Object.assign({}, nope, { xOf: xV, e0: 2, e1: 4, vmin: 300, vmax: 10000, ppd: P, mant: MANT_A }));
+  s += drawScale(tV, { y: 110, dir: -1, L1: 14, L2: 10, L3: 6, ly: 93, fs: 11.5, fmt: fmtS });
+  const tPv = genTicks(Object.assign({}, nope, { xOf: function (v) { return xV(4005 * Math.sqrt(v)); }, e0: -3, e1: 0, vmin: 0.005, vmax: 7, ppd: P / 2, mant: MANT_B }));
+  s += drawScale(tPv, { y: 166, dir: 1, L1: 14, L2: 10, L3: 6, ly: 194, fs: 11.5, fmt: fmtS });
+  const tF = genTicks(Object.assign({}, nope, { xOf: xF, e0: -2, e1: 0, vmin: 0.01, vmax: 5, ppd: PF, mant: MANT_B }));
+  s += drawScale(tF, { y: 250, dir: -1, L1: 14, L2: 10, L3: 6, ly: 233, fs: 11.5, fmt: fmtS });
+  return s + '<g id="dyn"></g>';
+}
+
+function dynSVG(Q, D, AR) {
+  const lo = WL - 6, hi = WR + 6;
+  const qA = (x) => 300 * Math.pow(10, (x - XV0) / P) * D * D / 183.35;
+  const qB = (x) => Math.pow(0.01 * Math.pow(10, (x - XF0) / PF) * Math.pow(D, 5.02) / KC, 1 / 1.9);
+  const dd = (x) => D * Math.pow(10, (x - XA) / (2 * P));
+  const open = { vmin: 0, vmax: Infinity, xmin: lo, xmax: hi };
+  const ex = (f) => ({ e0: Math.floor(Math.log10(f(lo))), e1: Math.floor(Math.log10(f(hi))) });
+  const xA = (q) => xV(vOf(q, D)), xB = (q) => xF(fOf(q, D));
+  const xD = (d) => XA + 2 * P * Math.log10(d / D);
+  let s = '';
+  const tQA = genTicks(Object.assign({}, open, ex(qA), { xOf: xA, ppd: P, mant: MANT_A }));
+  s += '<g clip-path="url(#c1)">' +
+    drawScale(tQA, { y: 110, dir: 1, L1: 12, L2: 9, L3: 5, ly: 144, fs: 12.5, fmt: fmtS }) +
+    drawScale(tQA, { y: 166, dir: -1, L1: 12, L2: 9, L3: 5, ly: 144, fs: 12.5, fmt: fmtS, noLab: true }) + '</g>';
+  s += '<g clip-path="url(#c2)">' + drawScale(genTicks(Object.assign({}, open, ex(qB), { xOf: xB, ppd: 1.9 * PF, mant: MANT_B })), { y: 250, dir: 1, L1: 14, L2: 10, L3: 6, ly: 279, fs: 12.5, fmt: fmtS }) + '</g>';
+  const tD = genTicks(Object.assign({}, open, ex(dd), { xOf: xD, ppd: 2 * P, mant: MANT_D }));
+  s += '<g clip-path="url(#c3)">' +
+    drawScale(tD, { y: 388, dir: -1, L1: 11, L2: 8, L3: 5, ly: 373, fs: 12.5, fmt: fmtS }) +
+    drawScale(tD, { y: 424, dir: -1, L1: 11, L2: 8, L3: 5, ly: 409, fs: 12.5, fmt: fmtS }) + '</g>';
+  const tb = [];
+  BVALS.forEach(function (b) {
+    if (b > 0.915 * D) return;
+    const a = solveOther(b, D), x = XA + 2 * P * Math.log10(a / D);
+    if (x >= WL && x <= WR) tb.push({ v: b, x: x, lab: true, int: true });
+  });
+  tb.sort(function (p, q) { return p.x - q.x; });
+  s += '<g clip-path="url(#c4)">' + drawScale(tb, { y: 424, dir: 1, L1: 12, L2: 9, L3: 5, ly: 454, fs: 12.5, fmt: fmtS }) + '</g>';
+  s += '<line class="sep" x1="' + XA + '" y1="352" x2="' + XA + '" y2="388"/>';
+
+  const V = vOf(Q, D), f = fOf(Q, D), Pv = Math.pow(V / 4005, 2);
+  let oor = false;
+  const x1 = xA(Q), x2 = xB(Q);
+  if (inWin(x1)) {
+    s += '<line class="cur" x1="' + x1.toFixed(1) + '" y1="76" x2="' + x1.toFixed(1) + '" y2="200"/>';
+    s += pill(x1, 93, fmtS(V) + ' fpm') + pill(x1, 138, fmtS(Q)) + pill(x1, 189, fmtS(Pv));
+  } else oor = true;
+  if (inWin(x2)) {
+    s += '<line class="cur" x1="' + x2.toFixed(1) + '" y1="216" x2="' + x2.toFixed(1) + '" y2="306"/>';
+    s += pill(x2, 233, fmtS(f)) + pill(x2, 297, fmtS(Q));
+  } else oor = true;
+  s += pill(XA + 46, 341, 'Ø ' + fmtS(D) + ' in');
+  const r = rectFromAR(D, AR), xh = XA + 2 * P * Math.log10(r.a / D);
+  if (inWin(xh)) {
+    s += '<line class="cur" x1="' + xh.toFixed(1) + '" y1="388" x2="' + xh.toFixed(1) + '" y2="466"/>';
+    s += pill(xh, 398, 'a ' + fmtS(r.a)) + pill(xh, 440, 'b ' + fmtS(r.b));
+  } else oor = true;
+  if (V < 300 || V > 10000 || f < 0.01 || f > 5) oor = true;
+  return { svg: s, oor: oor };
+}
+// </pure>
+
+const LS = 'duct-slide-rule-v1';
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const fmt = (x, d) => Number(x).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+const clampD = (d) => clamp(d, 3, 80);
+
+let S = { Q: 1000, D: DfromF(1000, 0.1), lock: 'f', lv: 0.1, AR: 2 };
+try {
+  const t = JSON.parse(localStorage.getItem(LS));
+  if (t && t.Q > 0 && t.D > 0 && ['f', 'V', 'D'].indexOf(t.lock) >= 0 && t.AR >= 1) S = { Q: clamp(t.Q, 30, 60000), D: clampD(t.D), lock: t.lock, lv: 0, AR: clamp(t.AR, 1, 6) };
+} catch (e) {}
+function relock() { if (S.lock === 'V') S.lv = vOf(S.Q, S.D); else if (S.lock === 'f') S.lv = fOf(S.Q, S.D); }
+relock();
+function setD(D) { S.D = clampD(D); relock(); }
+function setQ(Q) {
+  S.Q = clamp(Q, 30, 60000);
+  if (S.lock === 'V') S.D = clampD(DfromV(S.Q, S.lv));
+  else if (S.lock === 'f') S.D = clampD(DfromF(S.Q, S.lv));
+}
+
+const svg = $('rule');
+svg.innerHTML = staticSVG();
+const dyn = $('dyn');
+
+function setField(id, text) { const el = $(id); if (el && document.activeElement !== el) el.value = text; }
+function render() {
+  const d = dynSVG(S.Q, S.D, S.AR);
+  dyn.innerHTML = d.svg;
+  $('oor').hidden = !d.oor;
+  const V = vOf(S.Q, S.D), f = fOf(S.Q, S.D), Pv = Math.pow(V / 4005, 2);
+  setField('in-Q', fmt(S.Q, 0)); setField('in-D', fmt(S.D, 1)); setField('in-V', fmt(V, 0)); setField('in-f', fmt(f, 3));
+  $('rg-Q').value = Math.round(1000 * Math.log(S.Q / 30) / Math.log(2000));
+  $('alt-Q').textContent = fmt(S.Q * 0.47195, 0) + ' L/s · ' + fmt(S.Q * 1.699, 0) + ' m³/h';
+  $('alt-D').textContent = fmt(S.D * 25.4, 0) + ' mm';
+  $('alt-V').textContent = fmt(V * 0.00508, 1) + ' m/s';
+  $('alt-f').textContent = fmt(f * 8.164, 2) + ' Pa/m';
+  $('ro-pv').textContent = fmt(Pv, 3) + ' in.wg · ' + fmt(Pv * 248.84, 1) + ' Pa';
+  $('big-V').innerHTML = fmt(V, 0) + '<small>fpm</small>';
+  $('big-D').innerHTML = fmt(S.D, 1) + '<small>in</small>';
+  $('rg-f').value = Math.round(500 * Math.log10(clamp(f, 0.01, 1) / 0.01));
+  document.querySelectorAll('button[data-lock]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.lock === S.lock); });
+  document.querySelectorAll('button[data-ar]').forEach(function (b) { b.setAttribute('aria-pressed', Math.abs(+b.dataset.ar - S.AR) < 0.001); });
+  $('rg-ar').value = S.AR; $('ar-val').textContent = fmt(S.AR, 1) + ' : 1';
+
+  const r = rectFromAR(S.D, S.AR);
+  const a2 = Math.ceil(r.a - 1e-9), b2 = Math.ceil(r.b - 1e-9);
+  const De2 = eqDia(a2, b2), V2 = 144 * S.Q / (a2 * b2), f2 = fOf(S.Q, De2);
+  const mm = (x) => fmt(x * 25.4, 0);
+  $('rect-big').innerHTML = fmt(r.a, 1) + ' × ' + fmt(r.b, 1) + '<small>in</small>';
+  $('rect-mm').textContent = mm(r.a) + ' × ' + mm(r.b) + ' mm';
+  const row = (k, v) => '<div class="row"><dt>' + k + '</dt><dd>' + v + '</dd></div>';
+  $('rect-rows').innerHTML =
+    row('ความเร็วในท่อสี่เหลี่ยม', fmt(144 * S.Q / (r.a * r.b), 0) + ' fpm · ' + fmt(144 * S.Q / (r.a * r.b) * 0.00508, 1) + ' m/s') +
+    row('Friction (เท่าท่อกลม)', fmt(f, 3) + ' in.wg/100ft') +
+    row('ปัดขึ้นเป็นนิ้วเต็ม', a2 + ' × ' + b2 + ' in (' + mm(a2) + ' × ' + mm(b2) + ' mm)') +
+    row('หลังปัด: V · friction', fmt(V2, 0) + ' fpm · ' + fmt(f2, 3) + ' in.wg/100ft');
+  try { localStorage.setItem(LS, JSON.stringify({ Q: S.Q, D: S.D, lock: S.lock, AR: S.AR })); } catch (e) {}
+}
+let raf = 0;
+function schedule() { if (!raf) raf = requestAnimationFrame(function () { raf = 0; render(); }); }
+
+// drag the slide, tap a scale to set a value
+let drag = null;
+svg.addEventListener('pointerdown', function (e) {
+  try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+  const r = svg.getBoundingClientRect();
+  drag = { id: e.pointerId, k: W / r.width, x0: e.clientX, lastX: e.clientX, moved: false, r: r };
+});
+svg.addEventListener('pointermove', function (e) {
+  if (!drag || e.pointerId !== drag.id) return;
+  if (!drag.moved && Math.abs(e.clientX - drag.x0) > 5) drag.moved = true;
+  if (drag.moved) {
+    const dx = (e.clientX - drag.lastX) * drag.k;
+    drag.lastX = e.clientX;
+    setD(S.D * Math.pow(10, -dx / (2 * P)));
+    schedule();
+  }
+});
+svg.addEventListener('pointerup', function (e) {
+  if (!drag || e.pointerId !== drag.id) return;
+  const d = drag; drag = null;
+  if (d.moved) return;
+  const sx = (e.clientX - d.r.left) * d.k, sy = (e.clientY - d.r.top) * d.k;
+  if (sx < WL || sx > WR) return;
+  if ((sy >= 76 && sy <= 110) || (sy >= 166 && sy <= 200)) {
+    S.lock = 'V';
+    setD(DfromV(S.Q, clamp(300 * Math.pow(10, (sx - XV0) / P), 20, 30000)));
+  } else if (sy >= 216 && sy <= 250) {
+    S.lock = 'f';
+    setD(DfromF(S.Q, clamp(0.01 * Math.pow(10, (sx - XF0) / PF), 0.0005, 50)));
+  } else if (sy >= 352 && sy <= 388) {
+    S.lock = 'D';
+    setD(S.D * Math.pow(10, (sx - XA) / (2 * P)));
+  } else if (sy > 110 && sy < 166) {
+    setQ(Math.round(300 * Math.pow(10, (sx - XV0) / P) * S.D * S.D / 183.35));
+  } else if (sy > 250 && sy < 306) {
+    setQ(Math.round(Math.pow(0.01 * Math.pow(10, (sx - XF0) / PF) * Math.pow(S.D, 5.02) / KC, 1 / 1.9)));
+  } else return;
+  render();
+});
+svg.addEventListener('pointercancel', function () { drag = null; });
+
+// fields
+const num = (el) => parseFloat(String(el.value).replace(/,/g, ''));
+[['in-Q', function (v) { setQ(v); }],
+ ['in-D', function (v) { S.lock = 'D'; setD(v); }],
+ ['in-V', function (v) { S.lock = 'V'; setD(DfromV(S.Q, v)); }],
+ ['in-f', function (v) { S.lock = 'f'; setD(DfromF(S.Q, v)); }]].forEach(function (p) {
+  $(p[0]).addEventListener('change', function (e) {
+    const v = num(e.target);
+    if (isFinite(v) && v > 0) p[1](v);
+    e.target.blur(); render();
+  });
+});
+$('rg-Q').addEventListener('input', function (e) { setQ(Math.round(30 * Math.pow(2000, +e.target.value / 1000))); render(); });
+$('rg-f').addEventListener('input', function (e) { S.lock = 'f'; setD(DfromF(S.Q, 0.01 * Math.pow(10, +e.target.value / 500))); render(); });
+$('rg-ar').addEventListener('input', function (e) { S.AR = +e.target.value; render(); });
+document.querySelectorAll('button[data-lock]').forEach(function (b) { b.addEventListener('click', function () { S.lock = b.dataset.lock; relock(); render(); }); });
+document.querySelectorAll('button[data-ar]').forEach(function (b) { b.addEventListener('click', function () { S.AR = +b.dataset.ar; render(); }); });
+
+render();
+</script>
+</body>
+</html>
