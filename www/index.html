@@ -133,6 +133,27 @@
   .badge { fill: var(--cursor); }
   .bt { font-family: var(--font-rule); font-weight: 700; font-size: 11px; fill: var(--rule-card); }
   .hl { fill: none; stroke: var(--cursor); stroke-width: 1.6; stroke-dasharray: 5 3; }
+  .voice h2 { margin: 0 0 10px; font-size: 14px; font-weight: 600; }
+  .cmd { display: flex; gap: 8px; align-items: stretch; }
+  .cmd input[type="text"] { flex: 1 1 auto; min-width: 0; font: inherit; font-size: 16px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
+  .cmd .go { flex: 0 0 auto; font: inherit; font-size: 14px; font-weight: 600; padding: 0 16px; border: 0; border-radius: 6px; background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+  .mic { flex: 0 0 auto; width: 48px; border: 1px solid var(--accent); border-radius: 6px; background: transparent; color: var(--accent); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+  .mic[hidden] { display: none; }
+  .mic[aria-pressed="true"] { background: var(--cursor); border-color: var(--cursor); color: #fff; animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .65; } }
+  @media (prefers-reduced-motion: reduce) { .mic[aria-pressed="true"] { animation: none; } }
+  .ex { margin-top: 10px; }
+  .vmsg { margin: 10px 0 0; font-size: 13.5px; color: var(--muted); min-height: 1.4em; }
+  .vmsg.bad { color: var(--cursor); }
+  .ans { margin-top: 10px; padding: 14px; border: 1px solid var(--accent); border-radius: 8px; background: var(--bg); }
+  .ans .ahead { font-family: var(--font-data); font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+  .ans-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 8px; }
+  .ans .k { font-size: 13px; color: var(--muted); }
+  .ans .big { font-size: 40px; }
+  .ans-rect { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 14px; }
+  .ans-rect b { font-family: var(--font-data); font-weight: 500; font-size: 15px; }
+  .check2 { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .check2 input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
 </style>
 </head>
 <body>
@@ -141,6 +162,23 @@
     <h1>Duct Slide Rule</h1>
     <p class="sub">ไม้บรรทัดสไลด์คำนวณท่อลมแบบเดียวกับของจริง หน่วย IP พร้อมตัวเลขแม่นยำด้านล่าง</p>
   </header>
+
+  <section class="panel voice" aria-label="สั่งงานด้วยเสียงหรือพิมพ์">
+    <h2>สั่งงานด้วยเสียง</h2>
+    <form id="cmd-form" class="cmd" autocomplete="off">
+      <input id="cmd-in" type="text" lang="th" enterkeyhint="go" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="เช่น 2000 cfm ที่ 0.1 นิ้วน้ำ" aria-label="คำสั่งปริมาณลมและ friction">
+      <button type="button" id="mic" class="mic" hidden aria-pressed="false" aria-label="กดแล้วพูดคำสั่ง"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+      <button type="submit" class="go">คำนวณ</button>
+    </form>
+    <div class="chips ex" role="group" aria-label="ตัวอย่างคำสั่ง">
+      <button type="button" class="chip" data-ex="2000 cfm ที่ 0.1 นิ้วน้ำ">2000 cfm ที่ 0.1 นิ้วน้ำ</button>
+      <button type="button" class="chip" data-ex="800 cfm ที่ 0.08 นิ้วน้ำ">800 cfm ที่ 0.08 นิ้วน้ำ</button>
+      <button type="button" class="chip" data-ex="1500 cfm ความเร็ว 1000 fpm">1500 cfm ความเร็ว 1000 fpm</button>
+    </div>
+    <p class="vmsg" id="voice-msg" role="status">พิมพ์คำสั่ง หรือกดไมค์บนคีย์บอร์ดมือถือแล้วพูดลงช่องนี้ได้ พูดเป็นตัวเลขหรือคำไทยก็ได้ เช่น "สองพัน ซีเอฟเอ็ม ศูนย์จุดหนึ่ง นิ้วน้ำ"</p>
+    <div class="ans" id="answer" hidden aria-live="polite"></div>
+    <label class="check2" id="speak-wrap" hidden><input id="speak" type="checkbox" checked>อ่านคำตอบออกเสียงเมื่อสั่งด้วยไมค์</label>
+  </section>
 
   <section aria-label="ไม้บรรทัดสไลด์">
     <svg id="rule" viewBox="0 0 600 480" role="application" aria-label="ไม้บรรทัดสไลด์ท่อลม ลากซ้ายขวาเพื่อเลื่อนแถบสไลด์"></svg>
@@ -388,6 +426,93 @@ function dynSVG(Q, D, AR) {
 }
 // </pure>
 
+// <voice>
+const TH_DIG = { 'ศูนย์': 0, 'หนึ่ง': 1, 'เอ็ด': 1, 'สอง': 2, 'ยี่': 2, 'สาม': 3, 'สี่': 4, 'ห้า': 5, 'หก': 6, 'เจ็ด': 7, 'แปด': 8, 'เก้า': 9 };
+const TH_UNIT = { 'สิบ': 10, 'ร้อย': 100, 'พัน': 1000, 'หมื่น': 10000, 'แสน': 100000, 'ล้าน': 1000000 };
+const TH_TOK = 'ศูนย์|หนึ่ง|เอ็ด|สอง|ยี่|สาม|สี่|ห้า|หก|เจ็ด|แปด|เก้า|สิบ|ร้อย|พัน|หมื่น|แสน|ล้าน|จุด';
+function thaiRunToNumber(run) {
+  const toks = run.match(new RegExp(TH_TOK, 'g')) || [];
+  const dot = toks.indexOf('จุด');
+  const intT = dot < 0 ? toks : toks.slice(0, dot);
+  const decT = dot < 0 ? [] : toks.slice(dot + 1);
+  let total = 0, cur = null;
+  intT.forEach(function (t) {
+    if (t in TH_DIG) cur = cur === null ? TH_DIG[t] : cur * 10 + TH_DIG[t];
+    else { total += (cur === null ? 1 : cur) * TH_UNIT[t]; cur = null; }
+  });
+  if (cur !== null) total += cur;
+  let dec = '';
+  decT.forEach(function (t) { if (t in TH_DIG) dec += TH_DIG[t]; });
+  return dec ? parseFloat(total + '.' + dec) : total;
+}
+function normText(t) {
+  let s = String(t).toLowerCase();
+  s = s.replace(/[๐-๙]/g, function (d) { return String(d.charCodeAt(0) - 0x0E50); });
+  s = s.replace(/(\d),(?=\d{3}(?!\d))/g, '$1');
+  s = s.replace(/ต่อ\s*(?:ร้อย|100)\s*ฟุต|per\s*100\s*(?:ft|feet)|\/\s*100\s*(?:ft|feet)/g, ' ');
+  s = s.replace(new RegExp('(?:' + TH_TOK + ')(?:\\s*(?:' + TH_TOK + '))*', 'g'), function (m) { return ' ' + thaiRunToNumber(m) + ' '; });
+  const rep = [
+    [/ซี\s*เอฟ\s*เอ็ม|c\.?\s*f\.?\s*m\b\.?|ลูกบาศก์ฟุต(?:ต่อ|\/)นาที|cu\.?\s*ft(?:\/min)?/g, ' cfm '],
+    [/นิ้ว\s*(?:น้ำ|นํ้า|น้ํา)|in\.?\s*w\.?\s*[gc]\b\.?|inch(?:es)?\s*(?:of\s*)?(?:water|wg|w\.g)|"\s*wg/g, ' inwg '],
+    [/m\s*[3³]\s*\/\s*h(?:r)?\b|cmh|ลบ\.?\s*ม\.?\s*\/\s*ชม\.?|ลูกบาศก์เมตร\s*(?:ต่อ|\/)\s*ชั่วโมง/g, ' cmh '],
+    [/pa\s*\/\s*m\b|ปาสคาล\s*(?:ต่อ|\/)?\s*เมตร|ปาสคาล|pascals?(?:\s*per\s*m(?:eter)?)?/g, ' pam '],
+    [/\bl\s*\/\s*s\b|\blps\b|ลิตร\s*(?:ต่อ|\/)\s*วินาที|lit(?:er|re)s?\s*per\s*second/g, ' lps '],
+    [/fpm|ฟุต\s*(?:ต่อ|\/)\s*นาที|ft\s*\/\s*min|feet\s*per\s*minute/g, ' fpm '],
+    [/\bm\s*\/\s*s\b|\bmps\b|เมตร\s*(?:ต่อ|\/)\s*วินาที|meters?\s*per\s*second|metres?\s*per\s*second/g, ' mps '],
+    [/มิลลิเมตร|มม\.?|\bmm\b|millimet(?:er|re)s?/g, ' mm '],
+    [/นิ้ว|inch(?:es)?|"|\bin\b/g, ' inch ']
+  ];
+  rep.forEach(function (r) { s = s.replace(r[0], r[1]); });
+  return s;
+}
+function parseCommand(text) {
+  const s = normText(text);
+  const out = {}, notes = [], rest = [];
+  const set = function (k, v) { if (out[k] === undefined && isFinite(v) && v > 0) { out[k] = v; return true; } return false; };
+  const numRe = /(\d+(?:\.\d+)?|\.\d+)/g;
+  let m;
+  while ((m = numRe.exec(s))) {
+    const v = parseFloat(m[1]);
+    const um = s.slice(numRe.lastIndex).match(/^\s*(cfm|lps|cmh|inwg|pam|fpm|mps|mm|inch)(?![a-z])/);
+    const u = um ? um[1] : '';
+    const before = s.slice(Math.max(0, m.index - 18), m.index);
+    if (u === 'cfm') set('Q', v);
+    else if (u === 'lps') set('Q', v * 2.11888);
+    else if (u === 'cmh') set('Q', v * 0.588578);
+    else if (u === 'inwg') set('f', v);
+    else if (u === 'pam') set('f', v / 8.164);
+    else if (u === 'fpm') set('V', v);
+    else if (u === 'mps') set('V', v / 0.00508);
+    else if (u === 'mm') set('D', v / 25.4);
+    else if (u === 'inch') {
+      if (/(?:ท่อ|เส้นผ่านศูนย์กลาง|ขนาด|dia|diameter|ø)\D*$/.test(before) || v > 2) set('D', v);
+      else if (set('f', v)) notes.push('ตีความ ' + v + ' นิ้ว เป็น friction (นิ้วน้ำ)');
+    } else rest.push({ v: v, before: before });
+  }
+  rest.forEach(function (r) {
+    const b = r.before, v = r.v;
+    if (/(?:aspect|อัตราส่วน|สัดส่วน)\D*$/.test(b)) { if (v >= 1 && v <= 6) out.AR = v; }
+    else if (/(?:friction|ฟริกชั่น|ฟริคชั่น|ฟริกชัน|เฟรกชั่น|แรงเสียดทาน|ความดันตก|ความฝืด)\D*$/.test(b)) { if (set('f', v)) notes.push('ไม่ระบุหน่วย friction สมมติเป็นนิ้วน้ำต่อ 100 ฟุต'); }
+    else if (/(?:ความเร็ว|velocity|speed)\D*$/.test(b)) {
+      if (v >= 100) set('V', v); else if (v <= 40) set('V', v / 0.00508);
+      notes.push('ไม่ระบุหน่วยความเร็ว สมมติเป็น ' + (v >= 100 ? 'ฟุตต่อนาที' : 'เมตรต่อวินาที'));
+    }
+    else if (/(?:ท่อ|เส้นผ่านศูนย์กลาง|ขนาด|dia|diameter|ø)\D*$/.test(b)) { if (set('D', v)) notes.push('ไม่ระบุหน่วยขนาดท่อ สมมติเป็นนิ้ว'); }
+    else if (/(?:ปริมาณลม|ปริมาณ|airflow|flow|ลม)\D*$/.test(b)) { if (set('Q', v)) notes.push('ไม่ระบุหน่วยปริมาณลม สมมติเป็น CFM'); }
+    else r.free = true;
+  });
+  rest.forEach(function (r) {
+    if (!r.free) return;
+    const v = r.v;
+    if (out.Q === undefined && v >= 30) { set('Q', v); notes.push('ไม่ระบุหน่วย สมมติ ' + v + ' เป็น CFM'); }
+    else if (out.f === undefined && v >= 0.005 && v <= 2) { set('f', v); notes.push('ไม่ระบุหน่วย สมมติ ' + v + ' เป็น friction (นิ้วน้ำต่อ 100 ฟุต)'); }
+  });
+  out.notes = notes;
+  out.found = ['Q', 'f', 'V', 'D', 'AR'].filter(function (k) { return out[k] !== undefined; });
+  return out;
+}
+// </voice>
+
 const LS = 'duct-slide-rule-v1';
 const $ = (id) => document.getElementById(id);
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
@@ -507,6 +632,103 @@ $('rg-f').addEventListener('input', function (e) { S.lock = 'f'; setD(DfromF(S.Q
 $('rg-ar').addEventListener('input', function (e) { S.AR = +e.target.value; render(); });
 document.querySelectorAll('button[data-lock]').forEach(function (b) { b.addEventListener('click', function () { S.lock = b.dataset.lock; relock(); render(); }); });
 document.querySelectorAll('button[data-ar]').forEach(function (b) { b.addEventListener('click', function () { S.AR = +b.dataset.ar; render(); }); });
+
+// ---- voice and typed commands
+const cmdIn = $('cmd-in'), vmsg = $('voice-msg'), ans = $('answer'), micBtn = $('mic');
+function setMsg(t, bad) { vmsg.textContent = t || ''; vmsg.className = 'vmsg' + (bad ? ' bad' : ''); }
+function sayIt(text) {
+  try {
+    if (!window.speechSynthesis || !$('speak').checked) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text); u.lang = 'th-TH';
+    window.speechSynthesis.speak(u);
+  } catch (e) {}
+}
+function applyCmd(c) {
+  if (c.AR) S.AR = clamp(c.AR, 1, 6);
+  if (c.Q) S.Q = clamp(c.Q, 30, 60000);
+  if (c.f) { S.lock = 'f'; S.lv = clamp(c.f, 0.0005, 50); }
+  else if (c.V) { S.lock = 'V'; S.lv = clamp(c.V, 20, 30000); }
+  else if (c.D) { S.lock = 'D'; S.D = clampD(c.D); }
+  if (S.lock === 'V') S.D = clampD(DfromV(S.Q, S.lv));
+  else if (S.lock === 'f') S.D = clampD(DfromF(S.Q, S.lv));
+  relock();
+}
+function runCommand(text, byVoice) {
+  const c = parseCommand(text);
+  if (!c.found.length) {
+    setMsg('ไม่พบค่าที่ใช้คำนวณ ลองพูดว่า "2000 cfm ที่ 0.1 นิ้วน้ำ"', true);
+    ans.hidden = true;
+    return false;
+  }
+  applyCmd(c);
+  render();
+  const V = vOf(S.Q, S.D), f = fOf(S.Q, S.D);
+  const r = rectFromAR(S.D, S.AR), a2 = Math.ceil(r.a - 1e-9), b2 = Math.ceil(r.b - 1e-9);
+  const warn = c.notes.slice();
+  if (c.Q && Math.abs(S.Q / c.Q - 1) > 0.01) warn.push('ปริมาณลมอยู่นอกช่วงของแอป ปรับเป็น ' + fmt(S.Q, 0) + ' CFM');
+  if (c.f && Math.abs(f / c.f - 1) > 0.03) warn.push('Friction ที่ขออยู่นอกช่วงขนาดท่อ 3–80 นิ้ว ได้ ' + fmt(f, 3) + ' แทน');
+  if (c.V && Math.abs(V / c.V - 1) > 0.03) warn.push('ความเร็วที่ขออยู่นอกช่วงขนาดท่อ 3–80 นิ้ว ได้ ' + fmt(V, 0) + ' fpm แทน');
+  const mm = (x) => fmt(x * 25.4, 0);
+  ans.innerHTML =
+    '<div class="ahead">Q ' + fmt(S.Q, 0) + ' CFM · friction ' + fmt(f, 3) + ' in.wg/100ft</div>' +
+    '<div class="ans-grid">' +
+    '<div><div class="k">ท่อกลม Ø</div><div class="big">' + fmt(S.D, 1) + '<small>in</small></div><div class="mm">' + mm(S.D) + ' mm</div></div>' +
+    '<div><div class="k">ความเร็วลม</div><div class="big">' + fmt(V, 0) + '<small>fpm</small></div><div class="mm">' + fmt(V * 0.00508, 1) + ' m/s</div></div>' +
+    '</div>' +
+    '<div class="ans-rect">ท่อสี่เหลี่ยม ' + fmt(S.AR, 1) + ' : 1 ปัดขึ้น <b>' + a2 + ' × ' + b2 + ' in</b> (' + mm(a2) + ' × ' + mm(b2) + ' mm)</div>';
+  ans.hidden = false;
+  setMsg(warn.join(' · '), warn.length > 0 && warn.some(function (w) { return /นอกช่วง/.test(w); }));
+  if (byVoice) sayIt('ท่อกลมเส้นผ่านศูนย์กลาง ' + fmt(S.D, 1) + ' นิ้ว ความเร็วลม ' + fmt(V, 0) + ' ฟุตต่อนาที ท่อสี่เหลี่ยม ' + a2 + ' คูณ ' + b2 + ' นิ้ว');
+  return true;
+}
+$('cmd-form').addEventListener('submit', function (e) { e.preventDefault(); cmdIn.blur(); runCommand(cmdIn.value, false); });
+document.querySelectorAll('button[data-ex]').forEach(function (b) {
+  b.addEventListener('click', function () { cmdIn.value = b.dataset.ex; runCommand(b.dataset.ex, false); });
+});
+
+// microphone: only inside the Android app (Capacitor + speech-recognition plugin)
+const bridge = (function () {
+  try {
+    const C = window.Capacitor;
+    return (C && typeof C.nativePromise === 'function' && C.isNativePlatform && C.isNativePlatform()) ? C : null;
+  } catch (e) { return null; }
+})();
+const nat = function (m, o) { return bridge.nativePromise('SpeechRecognition', m, o || {}); };
+let listening = false;
+function errText(e) { return (e && (e.message || e.errorMessage)) ? String(e.message || e.errorMessage) : String(e || ''); }
+async function listen() {
+  if (listening) { try { await nat('stop'); } catch (e) {} return; }
+  try {
+    let p = await nat('checkPermissions');
+    if (!p || p.speechRecognition !== 'granted') p = await nat('requestPermissions');
+    if (!p || p.speechRecognition !== 'granted') { setMsg('ต้องอนุญาตไมโครโฟนให้แอปก่อน (ตั้งค่า > แอป > Duct Slide Rule > สิทธิ์)', true); return; }
+  } catch (e) { setMsg('เปิดสิทธิ์ไมโครโฟนไม่ได้: ' + errText(e), true); return; }
+  listening = true; micBtn.setAttribute('aria-pressed', 'true'); setMsg('กำลังฟัง พูดได้เลย');
+  try {
+    const r = await nat('start', { language: 'th-TH', maxResults: 5, partialResults: false, popup: false });
+    const list = (r && r.matches) || [];
+    let best = null;
+    list.forEach(function (t) { const n = parseCommand(t).found.length; if (n > 0 && (!best || n > best.n)) best = { t: t, n: n }; });
+    if (best) { cmdIn.value = best.t; runCommand(best.t, true); }
+    else if (list.length) { cmdIn.value = list[0]; setMsg('ได้ยินว่า "' + list[0] + '" แต่ไม่พบค่าที่ใช้คำนวณ ลองพูดใหม่', true); ans.hidden = true; }
+    else setMsg('ไม่ได้ยินเสียง ลองกดไมค์แล้วพูดใหม่', true);
+  } catch (e) {
+    setMsg('ฟังไม่สำเร็จ ลองพูดใหม่ให้ชัดขึ้น (' + errText(e) + ')', true);
+  }
+  listening = false; micBtn.setAttribute('aria-pressed', 'false');
+}
+if (bridge) {
+  nat('available').then(function (r) {
+    if (r && r.available) {
+      micBtn.hidden = false; $('speak-wrap').hidden = false;
+      setMsg('กดไมค์แล้วพูด เช่น "ปริมาณลม 2000 cfm ที่ 0.1 นิ้วน้ำ" หรือพิมพ์ในช่องก็ได้');
+      try { if (localStorage.getItem(LS + '-speak') === '0') $('speak').checked = false; } catch (e) {}
+    }
+  }).catch(function () {});
+  micBtn.addEventListener('click', listen);
+  $('speak').addEventListener('change', function (e) { try { localStorage.setItem(LS + '-speak', e.target.checked ? '1' : '0'); } catch (err) {} });
+}
 
 render();
 </script>
