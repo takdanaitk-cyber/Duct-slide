@@ -154,6 +154,29 @@
   .ans-rect b { font-family: var(--font-data); font-weight: 500; font-size: 15px; }
   .check2 { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--muted); }
   .check2 input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+  .pick h2 { margin: 0 0 10px; font-size: 14px; font-weight: 600; }
+  .types { margin-bottom: 12px; }
+  .band-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+  .band-row label { font-size: 13.5px; font-weight: 500; }
+  .band-row input { width: 84px; font-family: var(--font-data); font-size: 15px; text-align: right; padding: 5px 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .band-row input:disabled { opacity: .55; }
+  .band-row .u { font-family: var(--font-data); font-size: 12px; color: var(--muted); }
+  #band-note { margin-top: 6px; }
+  .pick-opts { margin-top: 10px; }
+  .pick-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+  .pcard { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: var(--bg); min-width: 0; }
+  .pcard.best { border: 2px solid var(--accent); padding: 11px; }
+  .pcard .rk { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+  .pcard.best .rk { color: var(--accent); }
+  .pcard .sz { font-family: var(--font-rule); font-weight: 700; font-size: 30px; line-height: 1.1; margin: 4px 0 2px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .pcard .sz small { font-size: 14px; font-weight: 500; color: var(--muted); margin-left: 4px; }
+  .pcard .row { display: block; font-size: 12px; padding: 6px 0; }
+  .pcard .row dd { font-size: 13.5px; text-align: left; color: var(--ink); margin-top: 1px; }
+  .tbl { overflow-x: auto; margin-top: 12px; }
+  .tbl table { border-collapse: collapse; width: 100%; font-family: var(--font-data); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .tbl th, .tbl td { padding: 6px 8px; text-align: right; border-top: 1px solid var(--line); white-space: nowrap; }
+  .tbl th { color: var(--muted); font-weight: 400; text-align: right; }
+  .tbl th:first-child, .tbl td:first-child { text-align: left; }
 </style>
 </head>
 <body>
@@ -167,12 +190,13 @@
     <h2>สั่งงานด้วยเสียง</h2>
     <form id="cmd-form" class="cmd" autocomplete="off">
       <input id="cmd-in" type="text" lang="th" enterkeyhint="go" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="เช่น 2000 cfm ที่ 0.1 นิ้วน้ำ" aria-label="คำสั่งปริมาณลมและ friction">
-      <button type="button" id="mic" class="mic" hidden aria-pressed="false" aria-label="กดแล้วพูดคำสั่ง"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+      <button type="button" id="mic" class="mic" aria-pressed="false" aria-label="กดแล้วพูดคำสั่ง"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
       <button type="submit" class="go">คำนวณ</button>
     </form>
     <div class="chips ex" role="group" aria-label="ตัวอย่างคำสั่ง">
       <button type="button" class="chip" data-ex="2000 cfm ที่ 0.1 นิ้วน้ำ">2000 cfm ที่ 0.1 นิ้วน้ำ</button>
-      <button type="button" class="chip" data-ex="800 cfm ที่ 0.08 นิ้วน้ำ">800 cfm ที่ 0.08 นิ้วน้ำ</button>
+      <button type="button" class="chip" data-ex="2000 cfm supply air">2000 cfm supply air</button>
+      <button type="button" class="chip" data-ex="800 cfm return air">800 cfm return air</button>
       <button type="button" class="chip" data-ex="1500 cfm ความเร็ว 1000 fpm">1500 cfm ความเร็ว 1000 fpm</button>
     </div>
     <p class="vmsg" id="voice-msg" role="status">พิมพ์คำสั่ง หรือกดไมค์บนคีย์บอร์ดมือถือแล้วพูดลงช่องนี้ได้ พูดเป็นตัวเลขหรือคำไทยก็ได้ เช่น "สองพัน ซีเอฟเอ็ม ศูนย์จุดหนึ่ง นิ้วน้ำ"</p>
@@ -208,6 +232,32 @@
     </div>
   </section>
 
+  <section class="panel pick" aria-label="ท่อสี่เหลี่ยมขนาดเลขคู่">
+    <h2>ท่อสี่เหลี่ยม ขนาดเลขคู่ ประหยัดที่สุด</h2>
+    <div class="chips types" id="types" role="group" aria-label="ประเภทท่อลม"></div>
+    <div class="band-row">
+      <label for="band-min">Friction min</label><input id="band-min" type="text" inputmode="decimal">
+      <label for="band-max">max</label><input id="band-max" type="text" inputmode="decimal">
+      <span class="u">in.wg/100ft</span>
+    </div>
+    <div class="mm" id="band-note"></div>
+    <details class="setfrom pick-opts">
+      <summary>เงื่อนไขขนาดท่อ</summary>
+      <div class="fld" style="border-top:0">
+        <label for="rg-maxar">อัตราส่วนด้านสูงสุด</label>
+        <div class="ro" id="maxar-val"></div>
+      </div>
+      <input id="rg-maxar" type="range" min="1" max="6" step="0.5" aria-label="อัตราส่วนด้านสูงสุด">
+      <div class="fld">
+        <label for="in-maxh">ความสูงท่อสูงสุด (ด้านสั้น)</label>
+        <div class="inp"><input id="in-maxh" type="text" inputmode="decimal" placeholder="ไม่จำกัด"><span class="u">in</span></div>
+      </div>
+    </details>
+    <p class="vmsg" id="pick-msg" role="status"></p>
+    <div class="pick-grid" id="pick-cards"></div>
+    <div class="tbl" id="pick-more"></div>
+  </section>
+
   <section class="panel" aria-label="ผลลัพธ์ท่อกลม">
     <h2>ผลลัพธ์ท่อกลม</h2>
     <div class="res2">
@@ -229,7 +279,7 @@
   </section>
 
   <section class="panel" aria-label="ท่อสี่เหลี่ยม">
-    <h2>ท่อสี่เหลี่ยม (equal friction)</h2>
+    <h2>ท่อสี่เหลี่ยม ขนาดคำนวณตรงตามสัดส่วน (ไม่ปัดเลขคู่)</h2>
     <label for="rg-ar" class="mm">Aspect ratio <span id="ar-val" style="color:var(--ink)"></span></label>
     <input id="rg-ar" type="range" min="1" max="6" step="0.1" aria-label="Aspect ratio">
     <div class="chips" role="group" aria-label="ค่า aspect ratio ที่ใช้บ่อย">
@@ -250,6 +300,7 @@
       <li>ลากแถบสไลด์จนความเร็วหรือ friction ที่เครื่องหมายสีแดงตรงตามต้องการ แล้วอ่านเส้นผ่านศูนย์กลางใต้ลูกศร</li>
       <li>ท่อสี่เหลี่ยม: เส้นสีแดงในช่องล่างอ่านด้านยาวและด้านสั้นที่ equal friction ตามแนวตั้งเดียวกัน ปรับด้วย aspect ratio</li>
       <li>ล็อก friction ไว้แล้วเปลี่ยน Q ได้ทันที ขนาดท่อจะตามอัตโนมัติ นี่คือวิธี equal friction</li>
+      <li>เลือกประเภทท่อลม ไม้บรรทัดจะตั้งที่ friction ค่า max ของประเภทนั้น แล้วแอปค้นขนาดท่อสี่เหลี่ยมเลขคู่ (6, 8, 10 ...) ที่ friction อยู่ในช่วง min–max เรียงจากเส้นรอบรูปน้อยสุด (ใช้แผ่นเหล็กน้อยสุด) ไปมาก</li>
     </ol>
     <p>สเกลคำนวณจากสมการเดียวกับไม้บรรทัดจริง: V = 183.35·Q / D², Δp = 0.109136·Q^1.9 / D^5.02 (in.wg ต่อ 100 ft, ท่อเหล็กอาบสังกะสี, อากาศมาตรฐาน), Pv = (V/4005)² และ De = 1.30(ab)^0.625/(a+b)^0.25 ตัวเลขด้านล่างคิดจากสมการโดยตรง จึงละเอียดกว่าการอ่านสเกล ไม่รวมความดันตกจาก fitting และอุปกรณ์</p>
   </details>
@@ -507,11 +558,45 @@ function parseCommand(text) {
     if (out.Q === undefined && v >= 30) { set('Q', v); notes.push('ไม่ระบุหน่วย สมมติ ' + v + ' เป็น CFM'); }
     else if (out.f === undefined && v >= 0.005 && v <= 2) { set('f', v); notes.push('ไม่ระบุหน่วย สมมติ ' + v + ' เป็น friction (นิ้วน้ำต่อ 100 ฟุต)'); }
   });
+  const rawL = String(text).toLowerCase();
+  const TYPE_RE = [
+    ['supply', /ซัพพลาย|ซัปพลาย|ซับพลาย|ซัพลาย|supply|ลมจ่าย|จ่ายลม|ท่อจ่าย/],
+    ['return', /รีเทิร์น|รีเทอร์น|รีเทิน|รีเทิร์|return|ลมกลับ|ท่อกลับ|ลมคืน/],
+    ['fresh', /เฟรช|fresh|ลมนอก|ลมสด|ลมบริสุทธิ์|อากาศบริสุทธิ์|outdoor|outside air/],
+    ['exhaust', /เอ็กซ์ฮอสต์|เอกซ์ฮอสต์|เอ็กฮอส|เอ๊กซ์ฮอส|exhaust|ลมเสีย|ลมทิ้ง|ระบายอากาศ|ท่อระบาย|ดูดอากาศ|ท่อดูด/]
+  ];
+  for (let i = 0; i < TYPE_RE.length; i++) { if (TYPE_RE[i][1].test(rawL)) { out.type = TYPE_RE[i][0]; break; } }
   out.notes = notes;
-  out.found = ['Q', 'f', 'V', 'D', 'AR'].filter(function (k) { return out[k] !== undefined; });
+  out.found = ['Q', 'f', 'V', 'D', 'AR', 'type'].filter(function (k) { return out[k] !== undefined; });
   return out;
 }
 // </voice>
+
+// <pick>
+const DUCT_TYPES = [
+  { id: 'supply', name: 'Supply air duct', th: 'ท่อลมจ่าย', def: [0.08, 0.10] },
+  { id: 'return', name: 'Return air duct', th: 'ท่อลมกลับ', def: [0.06, 0.08] },
+  { id: 'fresh', name: 'Fresh air duct', th: 'ท่อลมบริสุทธิ์', def: [0.08, 0.10] },
+  { id: 'exhaust', name: 'Exhaust air duct', th: 'ท่อลมระบายอากาศ', def: [0.08, 0.10] }
+];
+function pickRect(Q, fmin, fmax, o) {
+  const minSide = 6, maxSide = 120, eps = 1e-9;
+  const all = [];
+  for (let b = minSide; b <= maxSide; b += 2) {
+    if (o.maxH > 0 && b > o.maxH + eps) break;
+    for (let a = b; a <= maxSide && a <= b * o.maxAR + eps; a += 2) {
+      const De = eqDia(a, b), f = fOf(Q, De);
+      all.push({ a: a, b: b, De: De, f: f, V: 144 * Q / (a * b), per: 2 * (a + b) });
+    }
+  }
+  const ok = all.filter(function (p) { return p.f <= fmax * (1 + eps); });
+  let list = ok.filter(function (p) { return p.f >= fmin * (1 - eps); });
+  let belowMin = false;
+  if (!list.length) { list = ok; belowMin = ok.length > 0; }
+  list.sort(function (p, q) { return p.per - q.per || q.f - p.f || (p.a * p.b) - (q.a * q.b); });
+  return { list: list.slice(0, 6), none: list.length === 0, belowMin: belowMin };
+}
+// </pick>
 
 const LS = 'duct-slide-rule-v1';
 const $ = (id) => document.getElementById(id);
@@ -519,14 +604,24 @@ const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 const fmt = (x, d) => Number(x).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
 const clampD = (d) => clamp(d, 3, 80);
 
-let S = { Q: 1000, D: DfromF(1000, 0.1), lock: 'f', lv: 0.1, AR: 2 };
+let S = { Q: 1000, D: DfromF(1000, 0.1), lock: 'f', lv: 0.1, AR: 2, type: 'supply', maxAR: 4, maxH: 0 };
 try {
   const t = JSON.parse(localStorage.getItem(LS));
-  if (t && t.Q > 0 && t.D > 0 && ['f', 'V', 'D'].indexOf(t.lock) >= 0 && t.AR >= 1) S = { Q: clamp(t.Q, 30, 60000), D: clampD(t.D), lock: t.lock, lv: 0, AR: clamp(t.AR, 1, 6) };
+  if (t && t.Q > 0 && t.D > 0 && ['f', 'V', 'D'].indexOf(t.lock) >= 0 && t.AR >= 1) S = { Q: clamp(t.Q, 30, 60000), D: clampD(t.D), lock: t.lock, lv: 0, AR: clamp(t.AR, 1, 6), type: (['supply', 'return', 'fresh', 'exhaust'].indexOf(t.type) >= 0 ? t.type : 'custom'), maxAR: clamp(t.maxAR >= 1 ? t.maxAR : 4, 1, 6), maxH: t.maxH >= 6 ? t.maxH : 0 };
 } catch (e) {}
 function relock() { if (S.lock === 'V') S.lv = vOf(S.Q, S.D); else if (S.lock === 'f') S.lv = fOf(S.Q, S.D); }
 relock();
-function setD(D) { S.D = clampD(D); relock(); }
+const LSB = LS + '-bands';
+const BANDS = {};
+DUCT_TYPES.forEach(function (t) { BANDS[t.id] = t.def.slice(); });
+try {
+  const sb = JSON.parse(localStorage.getItem(LSB));
+  if (sb) DUCT_TYPES.forEach(function (t) { const v = sb[t.id]; if (Array.isArray(v) && v[0] > 0 && v[1] >= v[0]) BANDS[t.id] = [v[0], v[1]]; });
+} catch (e) {}
+function saveBands() { try { localStorage.setItem(LSB, JSON.stringify(BANDS)); } catch (e) {} }
+if (S.type !== 'custom' && S.lock !== 'f') S.type = 'custom';
+if (S.type !== 'custom') { S.lv = BANDS[S.type][1]; S.D = clampD(DfromF(S.Q, S.lv)); relock(); }
+function setD(D) { S.D = clampD(D); S.type = 'custom'; relock(); }
 function setQ(Q) {
   S.Q = clamp(Q, 30, 60000);
   if (S.lock === 'V') S.D = clampD(DfromV(S.Q, S.lv));
@@ -569,7 +664,8 @@ function render() {
     row('Friction (เท่าท่อกลม)', fmt(f, 3) + ' in.wg/100ft') +
     row('ปัดขึ้นเป็นนิ้วเต็ม', a2 + ' × ' + b2 + ' in (' + mm(a2) + ' × ' + mm(b2) + ' mm)') +
     row('หลังปัด: V · friction', fmt(V2, 0) + ' fpm · ' + fmt(f2, 3) + ' in.wg/100ft');
-  try { localStorage.setItem(LS, JSON.stringify({ Q: S.Q, D: S.D, lock: S.lock, AR: S.AR })); } catch (e) {}
+  renderPick();
+  try { localStorage.setItem(LS, JSON.stringify({ Q: S.Q, D: S.D, lock: S.lock, AR: S.AR, type: S.type, maxAR: S.maxAR, maxH: S.maxH })); } catch (e) {}
 }
 let raf = 0;
 function schedule() { if (!raf) raf = requestAnimationFrame(function () { raf = 0; render(); }); }
@@ -630,8 +726,85 @@ const num = (el) => parseFloat(String(el.value).replace(/,/g, ''));
 $('rg-Q').addEventListener('input', function (e) { setQ(Math.round(30 * Math.pow(2000, +e.target.value / 1000))); render(); });
 $('rg-f').addEventListener('input', function (e) { S.lock = 'f'; setD(DfromF(S.Q, 0.01 * Math.pow(10, +e.target.value / 500))); render(); });
 $('rg-ar').addEventListener('input', function (e) { S.AR = +e.target.value; render(); });
-document.querySelectorAll('button[data-lock]').forEach(function (b) { b.addEventListener('click', function () { S.lock = b.dataset.lock; relock(); render(); }); });
+document.querySelectorAll('button[data-lock]').forEach(function (b) { b.addEventListener('click', function () { S.lock = b.dataset.lock; S.type = 'custom'; relock(); render(); }); });
 document.querySelectorAll('button[data-ar]').forEach(function (b) { b.addEventListener('click', function () { S.AR = +b.dataset.ar; render(); }); });
+
+// ---- duct type, friction band and even-size picks
+function curBand() {
+  if (S.type !== 'custom') {
+    const t = DUCT_TYPES.filter(function (x) { return x.id === S.type; })[0];
+    return { min: BANDS[S.type][0], max: BANDS[S.type][1], name: t.name, th: t.th, custom: false };
+  }
+  const f = fOf(S.Q, S.D);
+  return { min: f * 0.8, max: f, name: 'กำหนดเอง', th: '', custom: true };
+}
+function currentPick() {
+  const b = curBand();
+  return { band: b, res: pickRect(S.Q, b.min, b.max, { maxAR: S.maxAR, maxH: S.maxH }) };
+}
+$('types').innerHTML = DUCT_TYPES.map(function (t) {
+  return '<button type="button" class="chip" data-type="' + t.id + '" aria-pressed="false">' + t.name + '</button>';
+}).join('');
+function selectType(id) {
+  S.type = id; S.lock = 'f'; S.lv = BANDS[id][1];
+  S.D = clampD(DfromF(S.Q, S.lv)); relock(); render();
+}
+$('types').addEventListener('click', function (e) {
+  const b = e.target.closest('button[data-type]');
+  if (b) selectType(b.dataset.type);
+});
+function commitBand() {
+  if (S.type === 'custom') { render(); return; }
+  let lo = parseFloat(String($('band-min').value).replace(/,/g, '')), hi = parseFloat(String($('band-max').value).replace(/,/g, ''));
+  if (!isFinite(lo) || !isFinite(hi) || lo <= 0 || hi <= 0) { render(); return; }
+  if (lo > hi) { const t = lo; lo = hi; hi = t; }
+  lo = clamp(lo, 0.005, 1); hi = clamp(hi, 0.005, 1);
+  BANDS[S.type] = [lo, hi]; saveBands();
+  S.lv = hi; S.D = clampD(DfromF(S.Q, S.lv)); relock(); render();
+}
+['band-min', 'band-max'].forEach(function (id) {
+  $(id).addEventListener('change', function (e) { commitBand(); e.target.blur(); });
+});
+$('rg-maxar').addEventListener('input', function (e) { S.maxAR = +e.target.value; render(); });
+$('in-maxh').addEventListener('change', function (e) {
+  const v = parseFloat(String(e.target.value).replace(/,/g, ''));
+  S.maxH = isFinite(v) && v >= 6 ? v : 0;
+  e.target.value = S.maxH ? String(S.maxH) : '';
+  render();
+});
+const rowH = function (k, v) { return '<div class="row"><dt>' + k + '</dt><dd>' + v + '</dd></div>'; };
+function pcard(p, rank, ref) {
+  const mm = function (x) { return fmt(x * 25.4, 0); };
+  let sub = '';
+  if (rank > 0) {
+    const d = (p.per / ref.per - 1) * 100;
+    sub = d < 0.05 ? 'เส้นรอบรูปเท่ากับอันดับ 1' : 'เส้นรอบรูปมากกว่าอันดับ 1 อยู่ ' + fmt(d, 1) + '%';
+  }
+  return '<div class="pcard' + (rank === 0 ? ' best' : '') + '"><div class="rk">' + (rank === 0 ? 'ประหยัดที่สุด' : 'ประหยัดรองลงมา') + '</div>' +
+    '<div class="sz">' + p.a + ' × ' + p.b + '<small>in</small></div><div class="mm">' + mm(p.a) + ' × ' + mm(p.b) + ' mm</div>' +
+    '<dl class="rows">' + rowH('Friction', fmt(p.f, 3) + ' in.wg/100ft') + rowH('ความเร็ว', fmt(p.V, 0) + ' fpm') +
+    rowH('เส้นรอบรูป', p.per + ' in · ' + fmt(p.per * 0.0254, 2) + ' m²/m') + '</dl>' + (sub ? '<div class="mm">' + sub + '</div>' : '') + '</div>';
+}
+function renderPick() {
+  const pk = currentPick(), b = pk.band, L = pk.res.list;
+  document.querySelectorAll('button[data-type]').forEach(function (x) { x.setAttribute('aria-pressed', x.dataset.type === S.type); });
+  setField('band-min', fmt(b.min, 3)); setField('band-max', fmt(b.max, 3));
+  $('band-min').disabled = b.custom; $('band-max').disabled = b.custom;
+  $('band-note').textContent = fmt(b.min * 8.164, 2) + '–' + fmt(b.max * 8.164, 2) + ' Pa/m · ' +
+    (b.custom ? 'กำหนดเอง ใช้ช่วง 80–100% ของ friction ที่ตั้ง เลือกประเภทท่อเพื่อใช้ช่วงของประเภทนั้น' : 'ไม้บรรทัดตั้งที่ค่า max ของประเภทนี้');
+  $('rg-maxar').value = S.maxAR; $('maxar-val').textContent = fmt(S.maxAR, 1) + ' : 1';
+  setField('in-maxh', S.maxH ? String(S.maxH) : '');
+  const msg = $('pick-msg');
+  if (pk.res.none) { msg.textContent = 'ไม่พบขนาดเลขคู่ที่ friction ไม่เกิน max ภายใต้เงื่อนไขนี้ ลองเพิ่มความสูงหรืออัตราส่วนด้านสูงสุด'; msg.className = 'vmsg bad'; }
+  else if (pk.res.belowMin) { msg.textContent = 'ไม่มีขนาดเลขคู่ที่ friction อยู่ในช่วง min–max (ปริมาณลมน้อยหรือต้องปัดเป็นเลขคู่) จึงแสดงขนาดที่ friction ไม่เกิน max'; msg.className = 'vmsg'; }
+  else { msg.textContent = ''; msg.className = 'vmsg'; }
+  $('pick-cards').innerHTML = L.slice(0, 2).map(function (p, i) { return pcard(p, i, L[0]); }).join('');
+  const more = L.slice(2);
+  $('pick-more').innerHTML = more.length
+    ? '<table><thead><tr><th>ขนาดอื่น (in)</th><th>friction</th><th>fpm</th><th>เส้นรอบรูป</th></tr></thead><tbody>' +
+      more.map(function (p) { return '<tr><td>' + p.a + ' × ' + p.b + '</td><td>' + fmt(p.f, 3) + '</td><td>' + fmt(p.V, 0) + '</td><td>' + p.per + ' in</td></tr>'; }).join('') + '</tbody></table>'
+    : '';
+}
 
 // ---- voice and typed commands
 const cmdIn = $('cmd-in'), vmsg = $('voice-msg'), ans = $('answer'), micBtn = $('mic');
@@ -647,9 +820,10 @@ function sayIt(text) {
 function applyCmd(c) {
   if (c.AR) S.AR = clamp(c.AR, 1, 6);
   if (c.Q) S.Q = clamp(c.Q, 30, 60000);
-  if (c.f) { S.lock = 'f'; S.lv = clamp(c.f, 0.0005, 50); }
-  else if (c.V) { S.lock = 'V'; S.lv = clamp(c.V, 20, 30000); }
-  else if (c.D) { S.lock = 'D'; S.D = clampD(c.D); }
+  if (c.f) { S.lock = 'f'; S.lv = clamp(c.f, 0.0005, 50); S.type = 'custom'; }
+  else if (c.V) { S.lock = 'V'; S.lv = clamp(c.V, 20, 30000); S.type = 'custom'; }
+  else if (c.D) { S.lock = 'D'; S.D = clampD(c.D); S.type = 'custom'; }
+  else if (c.type) { S.type = c.type; S.lock = 'f'; S.lv = BANDS[c.type][1]; }
   if (S.lock === 'V') S.D = clampD(DfromV(S.Q, S.lv));
   else if (S.lock === 'f') S.D = clampD(DfromF(S.Q, S.lv));
   relock();
@@ -664,22 +838,26 @@ function runCommand(text, byVoice) {
   applyCmd(c);
   render();
   const V = vOf(S.Q, S.D), f = fOf(S.Q, S.D);
-  const r = rectFromAR(S.D, S.AR), a2 = Math.ceil(r.a - 1e-9), b2 = Math.ceil(r.b - 1e-9);
+  const pk = currentPick(), L = pk.res.list;
   const warn = c.notes.slice();
+  if (c.type && (c.f || c.V || c.D)) warn.push('ใช้ค่าที่ระบุแทนช่วง friction ของประเภทท่อ');
   if (c.Q && Math.abs(S.Q / c.Q - 1) > 0.01) warn.push('ปริมาณลมอยู่นอกช่วงของแอป ปรับเป็น ' + fmt(S.Q, 0) + ' CFM');
   if (c.f && Math.abs(f / c.f - 1) > 0.03) warn.push('Friction ที่ขออยู่นอกช่วงขนาดท่อ 3–80 นิ้ว ได้ ' + fmt(f, 3) + ' แทน');
   if (c.V && Math.abs(V / c.V - 1) > 0.03) warn.push('ความเร็วที่ขออยู่นอกช่วงขนาดท่อ 3–80 นิ้ว ได้ ' + fmt(V, 0) + ' fpm แทน');
   const mm = (x) => fmt(x * 25.4, 0);
+  const rectHtml = L.length
+    ? '<div class="ans-rect">ท่อสี่เหลี่ยมเลขคู่ (' + pk.band.name + ') ประหยัดที่สุด <b>' + L[0].a + ' × ' + L[0].b + ' in</b>' + (L[1] ? ' · รองลงมา <b>' + L[1].a + ' × ' + L[1].b + ' in</b>' : '') + '</div>'
+    : '<div class="ans-rect">ไม่พบขนาดท่อสี่เหลี่ยมเลขคู่ที่เข้าเงื่อนไข</div>';
   ans.innerHTML =
-    '<div class="ahead">Q ' + fmt(S.Q, 0) + ' CFM · friction ' + fmt(f, 3) + ' in.wg/100ft</div>' +
+    '<div class="ahead">Q ' + fmt(S.Q, 0) + ' CFM · friction ' + fmt(f, 3) + ' in.wg/100ft' + (pk.band.custom ? '' : ' · ' + pk.band.name) + '</div>' +
     '<div class="ans-grid">' +
     '<div><div class="k">ท่อกลม Ø</div><div class="big">' + fmt(S.D, 1) + '<small>in</small></div><div class="mm">' + mm(S.D) + ' mm</div></div>' +
     '<div><div class="k">ความเร็วลม</div><div class="big">' + fmt(V, 0) + '<small>fpm</small></div><div class="mm">' + fmt(V * 0.00508, 1) + ' m/s</div></div>' +
     '</div>' +
-    '<div class="ans-rect">ท่อสี่เหลี่ยม ' + fmt(S.AR, 1) + ' : 1 ปัดขึ้น <b>' + a2 + ' × ' + b2 + ' in</b> (' + mm(a2) + ' × ' + mm(b2) + ' mm)</div>';
+    rectHtml;
   ans.hidden = false;
   setMsg(warn.join(' · '), warn.length > 0 && warn.some(function (w) { return /นอกช่วง/.test(w); }));
-  if (byVoice) sayIt('ท่อกลมเส้นผ่านศูนย์กลาง ' + fmt(S.D, 1) + ' นิ้ว ความเร็วลม ' + fmt(V, 0) + ' ฟุตต่อนาที ท่อสี่เหลี่ยม ' + a2 + ' คูณ ' + b2 + ' นิ้ว');
+  if (byVoice) sayIt('ท่อกลมเส้นผ่านศูนย์กลาง ' + fmt(S.D, 1) + ' นิ้ว ความเร็วลม ' + fmt(V, 0) + ' ฟุตต่อนาที' + (L.length ? ' ท่อสี่เหลี่ยมประหยัดที่สุด ' + L[0].a + ' คูณ ' + L[0].b + ' นิ้ว' + (L[1] ? ' รองลงมา ' + L[1].a + ' คูณ ' + L[1].b + ' นิ้ว' : '') : ' ไม่พบขนาดท่อสี่เหลี่ยมที่เข้าเงื่อนไข'));
   return true;
 }
 $('cmd-form').addEventListener('submit', function (e) { e.preventDefault(); cmdIn.blur(); runCommand(cmdIn.value, false); });
@@ -718,16 +896,36 @@ async function listen() {
   }
   listening = false; micBtn.setAttribute('aria-pressed', 'false');
 }
+// the mic button is always visible; when it cannot work, pressing it says why
+let micReady = null;
+function checkMic() {
+  if (!bridge) return Promise.resolve(false);
+  return nat('available').then(function (r) {
+    if (r && r.available) { micReady = true; return true; }
+    micReady = 'เครื่องนี้ไม่มีบริการรู้จำเสียงของ Google ลองติดตั้งหรือเปิดแอป Google และ Speech Services แล้วเปิดแอปนี้ใหม่';
+    return false;
+  }).catch(function (e) {
+    micReady = 'แอปนี้ยังไม่มีปลั๊กอินไมค์ ให้อัปโหลดไฟล์ package.json ตัวใหม่ขึ้น GitHub แล้วสร้าง APK ใหม่มาติดตั้งทับ (' + errText(e) + ')';
+    return false;
+  });
+}
+micBtn.addEventListener('click', function () {
+  if (!bridge) {
+    setMsg('ปุ่มไมค์ใช้ได้ในแอป Android (ไฟล์ APK) เท่านั้น ในเบราว์เซอร์ให้กดไมค์บนคีย์บอร์ดมือถือแล้วพูดลงช่องคำสั่งแทน', true);
+    cmdIn.focus();
+    return;
+  }
+  if (micReady === true) { listen(); return; }
+  checkMic().then(function (ok) { if (ok) listen(); else setMsg(micReady, true); });
+});
 if (bridge) {
-  nat('available').then(function (r) {
-    if (r && r.available) {
-      micBtn.hidden = false; $('speak-wrap').hidden = false;
-      setMsg('กดไมค์แล้วพูด เช่น "ปริมาณลม 2000 cfm ที่ 0.1 นิ้วน้ำ" หรือพิมพ์ในช่องก็ได้');
-      try { if (localStorage.getItem(LS + '-speak') === '0') $('speak').checked = false; } catch (e) {}
-    }
-  }).catch(function () {});
-  micBtn.addEventListener('click', listen);
+  $('speak-wrap').hidden = false;
+  try { if (localStorage.getItem(LS + '-speak') === '0') $('speak').checked = false; } catch (e) {}
   $('speak').addEventListener('change', function (e) { try { localStorage.setItem(LS + '-speak', e.target.checked ? '1' : '0'); } catch (err) {} });
+  checkMic().then(function (ok) {
+    if (ok) setMsg('กดไมค์แล้วพูด เช่น "ปริมาณลม 2000 cfm ที่ 0.1 นิ้วน้ำ" หรือพิมพ์ในช่องก็ได้');
+    else setMsg(micReady, true);
+  });
 }
 
 render();
